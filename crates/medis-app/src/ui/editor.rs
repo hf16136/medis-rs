@@ -35,6 +35,8 @@ pub const EDIT_LIMIT: usize = 512 * 1024;
 pub const PREVIEW_BYTES: usize = 128 * 1024;
 /// The Wrapping checkbox and the format buttons are hidden below this width.
 const WRAP_MIN_WIDTH: f32 = 372.0;
+/// Beautify / Minify need more room than the Wrapping checkbox: Save + both + mode + wrapping.
+const FORMAT_MIN_WIDTH: f32 = 500.0;
 const BAR_HEIGHT: f32 = 36.0;
 const MODES: [Mode; 3] = [Mode::Raw, Mode::Json, Mode::MessagePack];
 
@@ -174,6 +176,7 @@ pub fn show(ui: &mut Ui, inst: &mut Instance, cx: &mut Cx) -> Option<Vec<u8>> {
             let r = ui.max_rect();
             ui.painter().line_segment([Pos2::new(r.left() - 10.0, r.top()), Pos2::new(r.right() + 10.0, r.top())], Stroke::new(1.0, pal.border));
             let narrow = r.width() + 20.0 < WRAP_MIN_WIDTH;
+            let compact = r.width() + 20.0 < FORMAT_MIN_WIDTH;
             ui.horizontal_centered(|ui| {
                 if ui.add_enabled(editable && st.dirty, primary_button(&pal, "Save Changes")).clicked() {
                     save = true;
@@ -184,7 +187,7 @@ pub fn show(ui: &mut Ui, inst: &mut Instance, cx: &mut Cx) -> Option<Vec<u8>> {
                             .size(12.0)
                             .color(pal.text_dim),
                     );
-                } else if st.mode != Mode::Raw && !narrow {
+                } else if st.mode != Mode::Raw && !compact {
                     for (label, beautify) in [("Beautify", true), ("Minify", false)] {
                         if ui.small_button(label).clicked() {
                             let i = idx(st.mode);

@@ -203,6 +203,7 @@ impl State {
         let scroll_to = self.scroll_to.take();
         let Self { items, editing, sel, max_row, .. } = self;
 
+        common::tight_rows(ui);
         let mut builder = TableBuilder::new(ui)
             .id_salt(("hash-table", inst_id))
             .sense(Sense::click())
@@ -215,8 +216,10 @@ impl State {
         builder
             .header(22.0, |mut h| {
                 h.col(|ui| {
-                    ui.label(RichText::new("key").strong().color(pal.text_dim));
+                    common::cell_pad(ui);
+                    ui.label(RichText::new("key").color(pal.text_dim));
                     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                        ui.add_space(6.0);
                         if widgets::add_button(ui, &pal).clicked() {
                             acts.push(Act::Add);
                         }
@@ -232,6 +235,7 @@ impl State {
                     let is_editing = loaded && editing.as_ref().is_some_and(|e| e.row == i);
                     let mut end = None;
                     row.col(|ui| {
+                        common::cell_pad(ui);
                         if !loaded {
                             ui.add(Label::new(RichText::new("Loading...").color(pal.text_faint)).selectable(false));
                         } else if is_editing {
@@ -239,7 +243,7 @@ impl State {
                                 end = edit_ui(ui, e);
                             }
                         } else {
-                            ui.add(Label::new(RichText::new(&items[i].0).color(pal.text)).truncate().selectable(false));
+                            ui.add(Label::new(RichText::new(&items[i].0).monospace().size(12.0).color(pal.text)).truncate().selectable(false));
                         }
                     });
                     if !loaded {

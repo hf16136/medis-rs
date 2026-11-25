@@ -331,8 +331,10 @@ fn table(st: &mut State, ui: &mut Ui, cx: &mut Cx) {
     let sel = st.sel;
     let focused = st.focused;
 
+    common::tight_rows(ui);
     let mut builder = TableBuilder::new(ui)
         .id_salt("zset-table")
+        .cell_layout(Layout::left_to_right(Align::Center))
         .resizable(true)
         .sense(Sense::click())
         .auto_shrink([false, false])
@@ -351,13 +353,16 @@ fn table(st: &mut State, ui: &mut Ui, cx: &mut Cx) {
         .header(ROW_H, |mut h| {
             let (_, r) = h.col(|ui| {
                 paint_bg(ui, pal.toolbar);
+                common::cell_pad(ui);
                 out.toggle = sort_header(ui, &pal, "score", desc);
             });
             out.score_w = Some(r.rect.width());
             h.col(|ui| {
                 paint_bg(ui, pal.toolbar);
+                common::cell_pad(ui);
                 ui.label(RichText::new("member").color(pal.text_dim));
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                    ui.add_space(6.0);
                     if widgets::add_button(ui, &pal).clicked() {
                         out.add = true;
                     }
@@ -380,6 +385,7 @@ fn table(st: &mut State, ui: &mut Ui, cx: &mut Cx) {
                         if let Some(bg) = bg {
                             paint_bg(ui, bg);
                         }
+                        common::cell_pad(ui);
                         match (items.get(i), edit.as_mut().filter(|e| e.row == i)) {
                             (Some(_), Some(e)) => {
                                 let id = Id::unique(("zset-score-edit", i));
@@ -421,6 +427,7 @@ fn table(st: &mut State, ui: &mut Ui, cx: &mut Cx) {
                         if let Some(bg) = bg {
                             paint_bg(ui, bg);
                         }
+                        common::cell_pad(ui);
                         if let Some((m, _)) = items.get(i) {
                             let text = String::from_utf8_lossy(&m[..m.len().min(CELL_BYTES)]);
                             let line = text.lines().next().unwrap_or("");

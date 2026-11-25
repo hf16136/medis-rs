@@ -506,23 +506,26 @@ fn show_connected(ui: &mut Ui, inst: &mut Instance, cx: &mut Cx) {
         .show(ui, |ui| keys::show(ui, inst, cx));
 
     egui::Panel::top(("main-tabs", id))
-        .exact_size(34.0)
+        .exact_size(36.0)
         .show_separator_line(false)
         .frame(Frame::new().fill(pal.toolbar))
         .show(ui, |ui| main_tab_bar(ui, inst, &pal));
 
-    egui::Panel::bottom(("footer", id))
-        .exact_size(26.0)
-        .show_separator_line(false)
-        .frame(Frame::new().fill(pal.toolbar).inner_margin(Margin::symmetric(10, 0)))
-        .show(ui, |ui| {
-            let r = ui.max_rect();
-            ui.painter().line_segment(
-                [Pos2::new(r.left() - 10.0, r.top()), Pos2::new(r.right() + 10.0, r.top())],
-                Stroke::new(1.0, pal.border),
-            );
-            ui.with_layout(Layout::left_to_right(Align::Center), |ui| footer::show(ui, inst, cx));
-        });
+    // The footer describes the selected key, so it belongs under the Content tab only.
+    if inst.tab == MainTab::Content {
+        egui::Panel::bottom(("footer", id))
+            .exact_size(26.0)
+            .show_separator_line(false)
+            .frame(Frame::new().fill(pal.toolbar).inner_margin(Margin::symmetric(10, 0)))
+            .show(ui, |ui| {
+                let r = ui.max_rect();
+                ui.painter().line_segment(
+                    [Pos2::new(r.left() - 10.0, r.top()), Pos2::new(r.right() + 10.0, r.top())],
+                    Stroke::new(1.0, pal.border),
+                );
+                ui.with_layout(Layout::left_to_right(Align::Center), |ui| footer::show(ui, inst, cx));
+            });
+    }
 
     egui::CentralPanel::default().frame(Frame::new().fill(pal.content)).show(ui, |ui| match inst.tab {
         MainTab::Content => content::show(ui, inst, cx),

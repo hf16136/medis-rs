@@ -178,6 +178,7 @@ impl State {
         let scroll_to = self.scroll_to.take();
         let Self { items, sel, max_row, .. } = self;
 
+        common::tight_rows(ui);
         let mut builder = TableBuilder::new(ui)
             .id_salt(("set-table", inst_id))
             .sense(Sense::click())
@@ -190,8 +191,10 @@ impl State {
         builder
             .header(22.0, |mut h| {
                 h.col(|ui| {
-                    ui.label(RichText::new("member").strong().color(pal.text_dim));
+                    common::cell_pad(ui);
+                    ui.label(RichText::new("member").color(pal.text_dim));
                     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                        ui.add_space(6.0);
                         if widgets::add_button(ui, &pal).clicked() {
                             acts.push(Act::Add);
                         }
@@ -205,9 +208,10 @@ impl State {
                     row.set_selected(*sel == Some(i));
                     let loaded = i < items.len();
                     row.col(|ui| {
+                        common::cell_pad(ui);
                         if loaded {
                             let text = String::from_utf8_lossy(&items[i]).into_owned();
-                            ui.add(Label::new(RichText::new(text).color(pal.text)).truncate().selectable(false));
+                            ui.add(Label::new(RichText::new(text).monospace().size(12.0).color(pal.text)).truncate().selectable(false));
                         } else {
                             ui.add(Label::new(RichText::new("Loading...").color(pal.text_faint)).selectable(false));
                         }
