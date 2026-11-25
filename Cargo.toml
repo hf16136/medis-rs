@@ -1,0 +1,36 @@
+[workspace]
+members = ["crates/*"]
+resolver = "3"
+
+[workspace.package]
+edition = "2024"
+rust-version = "1.95"
+version = "0.1.0"
+license = "MIT"
+
+[workspace.dependencies]
+# UI (used by the app lane; medis-core must not depend on these)
+eframe = { version = "0.37", default-features = false, features = ["glow", "default_fonts", "accesskit", "persistence", "wayland", "x11"] }
+egui = "0.37"
+egui_extras = "0.37"
+rfd = "0.18"
+muda = "0.21"
+
+# Core
+redis = { version = "1.8", features = ["tokio-rustls-comp", "tls-rustls-insecure", "cluster-async", "connection-manager"] }
+rustls = { version = "0.23", default-features = false, features = ["aws-lc-rs", "std"] }
+russh = "0.65"
+tokio = { version = "1", features = ["full"] }
+futures = "0.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+dirs = "6"
+uuid = { version = "1", features = ["v4"] }
+thiserror = "2"
+rmpv = "1"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true
+opt-level = 3
