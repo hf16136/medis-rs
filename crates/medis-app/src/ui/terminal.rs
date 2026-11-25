@@ -12,7 +12,7 @@ use egui::text_edit::TextEditState;
 use egui::text_selection::{CCursorRange, LabelSelectionState};
 use egui::{
     Color32, Context, Event, FontId, Frame, Id, Key, Label, Margin, Modifiers, ScrollArea, Sense, Stroke, TextEdit,
-    TextFormat, TextWrapMode, Ui, text::LayoutJob,
+    TextFormat, TextWrapMode, Ui, Vec2, text::LayoutJob,
 };
 use medis_core::cmdline::{
     CONFIRM_PROMPT, PROMPT, Special, classify, complete, completions, needs_confirm, parse_confirm, split_args,
@@ -465,13 +465,19 @@ pub fn show(ui: &mut Ui, inst: &mut Instance, cx: &mut Cx) {
             ui.horizontal_centered(|ui| {
                 ui.spacing_mut().item_spacing.x = 0.0;
                 if !prompt.is_empty() {
-                    ui.add(Label::new(egui::RichText::new(prompt).font(font.clone()).color(prompt_col)).selectable(false));
+                    // Painted in a box exactly one text row high, centred, so the prompt and the
+                    // typed text (same font, same row height) sit on one baseline.
+                    let w = ui.fonts_mut(|f| f.layout_no_wrap(prompt.to_owned(), font.clone(), prompt_col).size().x);
+                    let (rect, _) = ui.allocate_exact_size(Vec2::new(w, row_h), Sense::hover());
+                    ui.painter().text(rect.left_center(), egui::Align2::LEFT_CENTER, prompt, font.clone(), prompt_col);
                 }
                 let out = TextEdit::singleline(&mut st.input)
                     .id(input_id)
                     .font(font.clone())
                     .frame(Frame::new())
                     .margin(Margin::ZERO)
+                    .align(egui::Align2::LEFT_CENTER)
+                    .min_size(Vec2::new(0.0, row_h))
                     .text_color(COL_INPUT)
                     .desired_width(f32::INFINITY)
                     .lock_focus(true)

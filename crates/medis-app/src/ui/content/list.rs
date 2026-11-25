@@ -258,8 +258,10 @@ fn table(st: &mut State, ui: &mut Ui, cx: &mut Cx) {
     let sel = st.sel;
     let focused = st.focused;
 
+    common::tight_rows(ui);
     let mut builder = TableBuilder::new(ui)
         .id_salt("list-table")
+        .cell_layout(Layout::left_to_right(Align::Center))
         .resizable(true)
         .sense(Sense::click())
         .auto_shrink([false, false])
@@ -282,13 +284,16 @@ fn table(st: &mut State, ui: &mut Ui, cx: &mut Cx) {
         .header(ROW_H, |mut h| {
             let (_, r) = h.col(|ui| {
                 paint_bg(ui, pal.toolbar);
+                common::cell_pad(ui);
                 toggle = sort_header(ui, &pal, "index", desc);
             });
             idx_w = Some(r.rect.width());
             h.col(|ui| {
                 paint_bg(ui, pal.toolbar);
+                common::cell_pad(ui);
                 ui.label(RichText::new("item").color(pal.text_dim));
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                    ui.add_space(6.0);
                     if widgets::add_button(ui, &pal).clicked() {
                         add = true;
                     }
@@ -310,6 +315,7 @@ fn table(st: &mut State, ui: &mut Ui, cx: &mut Cx) {
                     if let Some(bg) = bg {
                         paint_bg(ui, bg);
                     }
+                    common::cell_pad(ui);
                     Frame::new().fill(pal.hover).corner_radius(8.0).inner_margin(Margin::symmetric(6, 1)).show(ui, |ui| {
                         ui.label(RichText::new(number.to_string()).size(11.0).color(pal.text_dim));
                     });
@@ -318,6 +324,7 @@ fn table(st: &mut State, ui: &mut Ui, cx: &mut Cx) {
                     if let Some(bg) = bg {
                         paint_bg(ui, bg);
                     }
+                    common::cell_pad(ui);
                     match items.get(i) {
                         Some(bytes) => {
                             let text = String::from_utf8_lossy(&bytes[..bytes.len().min(CELL_BYTES)]);

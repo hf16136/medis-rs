@@ -6,6 +6,19 @@ use medis_core::storage::Sizes;
 use crate::instance::{Cx, Instance};
 use crate::ui::modal::ModalSpec;
 
+/// Space between a column edge and its text, so cells line up with the key list (10px).
+pub const CELL_PAD: f32 = 10.0;
+
+/// Starts a table cell: the inner left padding.
+pub fn cell_pad(ui: &mut Ui) {
+    ui.add_space(CELL_PAD);
+}
+
+/// Table rows are exactly as tall as asked (the key list does the same): no extra spacing.
+pub fn tight_rows(ui: &mut Ui) {
+    ui.spacing_mut().item_spacing.y = 0.0;
+}
+
 /// Title, button and body of the common delete-item confirm (SPEC-2 5.0).
 pub const DELETE_TITLE: &str = "Delete selected item?";
 pub const DELETE_BUTTON: &str = "Delete";
