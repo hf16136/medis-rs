@@ -1,0 +1,24 @@
+[package]
+name = "medis-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Core (non-UI) library for the Medis Redis GUI port"
+
+[dependencies]
+redis.workspace = true
+rustls.workspace = true
+russh.workspace = true
+tokio.workspace = true
+futures.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+dirs.workspace = true
+uuid.workspace = true
+thiserror.workspace = true
+rmpv.workspace = true
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+
+[dev-dependencies]
+tempfile = "3"
