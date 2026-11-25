@@ -157,10 +157,21 @@ impl MedisApp {
             Cmd::ReportIssue => ctx.open_url(egui::OpenUrl::new_tab("mailto:medis@zihua.li")),
             Cmd::LearnMore => ctx.open_url(egui::OpenUrl::new_tab("http://getmedis.com")),
         }
+        // Injected events are delivered by raw_input_hook on the next frame.
+        if !self.inject.is_empty() {
+            ctx.request_repaint();
+        }
     }
 
     fn inject_key(&mut self, key: Key, shift: bool) {
-        let mut modifiers = if cfg!(target_os = "macos") { Modifiers::MAC_CMD } else { Modifiers::CTRL };
+        // egui widgets test the logical `command` flag, so it must be set; the
+        // physical flag (mac_cmd / ctrl) is set too, as winit would.
+        let mut modifiers = Modifiers::COMMAND;
+        if cfg!(target_os = "macos") {
+            modifiers.mac_cmd = true;
+        } else {
+            modifiers.ctrl = true;
+        }
         modifiers.shift = shift;
         self.inject.push(egui::Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers });
     }

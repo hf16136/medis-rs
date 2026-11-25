@@ -25,4 +25,4 @@ uuid.workspace = true
 muda.workspace = true
 
 [dev-dependencies]
-egui_kittest = { version = "0.37", features = ["eframe"] }
+egui_kittest = { version = "0.37", features = ["eframe", "wgpu", "snapshot"] }

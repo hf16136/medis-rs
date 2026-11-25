@@ -3,6 +3,8 @@
 mod app;
 mod instance;
 #[cfg(test)]
+mod shots;
+#[cfg(test)]
 mod smoke_tests;
 mod ui;
 
