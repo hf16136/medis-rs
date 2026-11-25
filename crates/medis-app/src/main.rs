@@ -18,9 +18,15 @@ fn main() -> eframe::Result {
         .build()
         .expect("could not start the async runtime");
 
+    // Without an explicit icon eframe swaps in its default egui logo at
+    // runtime (Dock / taskbar), overriding the bundle's Medis.icns.
+    let icon = eframe::icon_data::from_png_bytes(include_bytes!("../assets/icon-1024.png"))
+        .expect("bundled icon is a valid PNG");
+
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_title("Medis")
+            .with_icon(icon)
             .with_app_id("medis")
             .with_inner_size([960.0, 600.0])
             .with_min_inner_size([840.0, 400.0]),
