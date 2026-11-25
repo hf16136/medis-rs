@@ -10,7 +10,7 @@ use egui_kittest::kittest::{NodeT, Queryable};
 
 use crate::app::MedisApp;
 
-fn redis_addr() -> Option<(String, String)> {
+pub(crate) fn redis_addr() -> Option<(String, String)> {
     let url = std::env::var("MEDIS_TEST_REDIS").ok()?;
     let hp = url.strip_prefix("redis://").unwrap_or(&url).trim_end_matches('/');
     let (h, p) = hp.rsplit_once(':')?;
@@ -18,14 +18,19 @@ fn redis_addr() -> Option<(String, String)> {
 }
 
 fn make_harness() -> Harness<'static, MedisApp> {
+    make_harness_sized(egui::Vec2::new(1100.0, 700.0), false)
+}
+
+pub(crate) fn make_harness_sized(size: egui::Vec2, render: bool) -> Harness<'static, MedisApp> {
     medis_core::install_crypto_provider();
     let rt = tokio::runtime::Builder::new_multi_thread().enable_all().worker_threads(2).build().unwrap();
     let dir = std::env::temp_dir().join(format!("medis-smoke-{}", uuid::Uuid::new_v4().simple()));
     let storage = medis_core::storage::Storage::new(dir);
-    Harness::builder()
-        .with_size(egui::Vec2::new(1100.0, 700.0))
-        .with_accessibility_check(false)
-        .build_eframe(move |cc| MedisApp::with_storage(&cc.egui_ctx, rt, storage))
+    let mut builder = Harness::builder().with_size(size).with_accessibility_check(false);
+    if render {
+        builder = builder.wgpu();
+    }
+    builder.build_eframe(move |cc| MedisApp::with_storage(&cc.egui_ctx, rt, storage))
 }
 
 
@@ -33,7 +38,7 @@ const TIMEOUT: Duration = Duration::from_secs(10);
 
 /// Steps the harness until `cond` holds (or the timeout), sleeping between frames so the async
 /// worker can answer. Returns whether the condition was met.
-fn wait_for(h: &mut Harness<'_, MedisApp>, what: &str, mut cond: impl FnMut(&Harness<'_, MedisApp>) -> bool) -> bool {
+pub(crate) fn wait_for(h: &mut Harness<'_, MedisApp>, what: &str, mut cond: impl FnMut(&Harness<'_, MedisApp>) -> bool) -> bool {
     let start = Instant::now();
     loop {
         h.step();
@@ -62,11 +67,11 @@ fn dump_tree(h: &Harness<'_, MedisApp>) {
 
 
 /// Is there any node whose label (or, for text labels, value) contains `text`?
-fn has(h: &Harness<'_, MedisApp>, text: &str) -> bool {
+pub(crate) fn has(h: &Harness<'_, MedisApp>, text: &str) -> bool {
     h.query_all_by_label_contains(text).next().is_some()
 }
 
-fn expect(h: &mut Harness<'_, MedisApp>, text: &str) {
+pub(crate) fn expect(h: &mut Harness<'_, MedisApp>, text: &str) {
     assert!(wait_for(h, text, |h| has(h, text)), "\"{text}\" never appeared");
 }
 
@@ -80,14 +85,14 @@ fn type_focused(h: &mut Harness<'_, MedisApp>, text: &str) {
     h.step();
 }
 
-fn press(h: &mut Harness<'_, MedisApp>, key: egui::Key) {
+pub(crate) fn press(h: &mut Harness<'_, MedisApp>, key: egui::Key) {
     h.key_press(key);
     h.step();
     h.step();
 }
 
 /// Replaces the text of the `n`-th single-line text input.
-fn set_text_input(h: &mut Harness<'_, MedisApp>, n: usize, text: &str) {
+pub(crate) fn set_text_input(h: &mut Harness<'_, MedisApp>, n: usize, text: &str) {
     {
         let inputs: Vec<_> = h.query_all_by_role(Role::TextInput).collect();
         inputs[n].focus();
@@ -98,7 +103,7 @@ fn set_text_input(h: &mut Harness<'_, MedisApp>, n: usize, text: &str) {
     type_focused(h, text);
 }
 
-fn connect(h: &mut Harness<'_, MedisApp>, host: &str, port: &str) {
+pub(crate) fn connect(h: &mut Harness<'_, MedisApp>, host: &str, port: &str) {
     h.run();
     set_text_input(h, 0, host);
     set_text_input(h, 1, port);
@@ -107,12 +112,16 @@ fn connect(h: &mut Harness<'_, MedisApp>, host: &str, port: &str) {
 }
 
 /// Starts an app and connects to the test server; waits for the connected UI.
-fn connected() -> Option<Harness<'static, MedisApp>> {
+pub(crate) fn connected() -> Option<Harness<'static, MedisApp>> {
+    connected_sized(egui::Vec2::new(1100.0, 700.0), false)
+}
+
+pub(crate) fn connected_sized(size: egui::Vec2, render: bool) -> Option<Harness<'static, MedisApp>> {
     let Some((host, port)) = redis_addr() else {
         eprintln!("MEDIS_TEST_REDIS is not set; skipping the GUI smoke test");
         return None;
     };
-    let mut h = make_harness();
+    let mut h = make_harness_sized(size, render);
     connect(&mut h, &host, &port);
     expect(&mut h, "Keys: ");
     Some(h)
@@ -120,19 +129,19 @@ fn connected() -> Option<Harness<'static, MedisApp>> {
 
 /// Filters the key list with `pattern` (the first text input of the connected UI) and waits
 /// for `key` to show up. The first key of a fresh scan is selected automatically.
-fn filter_to(h: &mut Harness<'_, MedisApp>, pattern: &str, key: &str) {
+pub(crate) fn filter_to(h: &mut Harness<'_, MedisApp>, pattern: &str, key: &str) {
     set_text_input(h, 0, pattern);
     press(h, egui::Key::Enter);
     expect(h, key);
 }
 
-fn select_key(h: &mut Harness<'_, MedisApp>, key: &str) {
+pub(crate) fn select_key(h: &mut Harness<'_, MedisApp>, key: &str) {
     filter_to(h, key, key);
     h.get_by_label(key).click();
     h.step();
 }
 
-fn open_tab(h: &mut Harness<'_, MedisApp>, tab: &str) {
+pub(crate) fn open_tab(h: &mut Harness<'_, MedisApp>, tab: &str) {
     h.get_by_role_and_label(Role::Tab, tab).click();
     h.step();
 }
