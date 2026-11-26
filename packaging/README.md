@@ -50,9 +50,12 @@ Locally built apps are not quarantined and open normally.
 
 ## Linux and Windows
 
-GitHub Actions (`.github/workflows/build.yml`) builds every platform on each push to `main` and
-on pull requests. Pushing a `v*` tag also publishes a GitHub release with all of them:
+GitHub Actions (`.github/workflows/build.yml`) builds every platform when a `v*` tag is pushed,
+and publishes a GitHub release with all of them:
 
 ```sh
 git tag v0.1.0 && git push origin v0.1.0
 ```
+
+To build without releasing, use **Actions → Build → Run workflow**; the packages are under the
+run's Artifacts.
