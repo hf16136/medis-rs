@@ -265,3 +265,39 @@ fn h_zset_view() {
     select_key(&mut h, "leaderboard");
     expect(&mut h, "alice");
 }
+
+#[test]
+fn theme_toggle_flips_light_and_dark() {
+    let mut h = make_harness();
+    h.run();
+    h.ctx.set_theme(egui::ThemePreference::Light);
+    h.run();
+    h.get_by_label("Switch to dark theme").click();
+    h.run();
+    assert_eq!(h.ctx.theme(), egui::Theme::Dark);
+    expect(&mut h, "Switch to light theme");
+    h.get_by_label("Switch to light theme").click();
+    h.run();
+    assert_eq!(h.ctx.theme(), egui::Theme::Light);
+    expect(&mut h, "Switch to dark theme");
+
+    // Optional: render both states for a human to look at.
+    if let Ok(dir) = std::env::var("MEDIS_SHOTS_DIR") {
+        let mut h = make_harness_sized(egui::Vec2::new(900.0, 560.0), true);
+        for (name, pref) in [("theme-light", egui::ThemePreference::Light), ("theme-dark", egui::ThemePreference::Dark)] {
+            h.ctx.set_theme(pref);
+            h.run();
+            std::fs::create_dir_all(&dir).unwrap();
+            h.render().expect("render failed").save(std::path::Path::new(&dir).join(format!("{name}.png"))).unwrap();
+        }
+        // The connected screen has its own switch, in the main tab bar.
+        if let Some(mut h) = connected_sized(egui::Vec2::new(1000.0, 560.0), true) {
+            h.ctx.set_theme(egui::ThemePreference::Light);
+            h.run();
+            h.get_by_label("Switch to dark theme").click();
+            h.run();
+            assert_eq!(h.ctx.theme(), egui::Theme::Dark);
+            h.render().expect("render failed").save(std::path::Path::new(&dir).join("theme-connected-dark.png")).unwrap();
+        }
+    }
+}
