@@ -77,6 +77,9 @@ pub fn show(ui: &mut Ui, inst: &mut Instance, cx: &mut Cx) {
                 if rem.clicked() && can_remove {
                     connect::request_delete(cx);
                 }
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    widgets::theme_toggle(ui, &pal);
+                });
             });
         });
 
