@@ -301,3 +301,41 @@ fn theme_toggle_flips_light_and_dark() {
         }
     }
 }
+
+#[test]
+fn theme_choice_carries_over_to_new_windows() {
+    medis_core::install_crypto_provider();
+    let dir = std::env::temp_dir().join(format!("medis-theme-{}", uuid::Uuid::new_v4().simple()));
+    let open = |dir: std::path::PathBuf| {
+        let rt = tokio::runtime::Builder::new_multi_thread().enable_all().worker_threads(1).build().unwrap();
+        let storage = medis_core::storage::Storage::new(dir);
+        Harness::builder()
+            .with_size(egui::Vec2::new(900.0, 560.0))
+            .with_accessibility_check(false)
+            .build_eframe(move |cc| MedisApp::with_storage(&cc.egui_ctx, rt, storage))
+    };
+
+    let mut first = open(dir.clone());
+    first.run();
+    first.ctx.set_theme(egui::ThemePreference::Light);
+    first.run();
+    first.get_by_label("Switch to dark theme").click();
+    first.run();
+    assert_eq!(first.ctx.theme(), egui::Theme::Dark);
+
+    // A new window is a new process on the same storage: it starts dark.
+    let mut second = open(dir.clone());
+    second.run();
+    assert_eq!(second.ctx.options(|o| o.theme_preference), egui::ThemePreference::Dark);
+
+    // Switching back in the new window reaches the first one too.
+    second.get_by_label("Switch to light theme").click();
+    second.run();
+    // Other windows are checked about once a second (of egui time, which the harness advances
+    // per frame).
+    for _ in 0..90 {
+        first.step();
+    }
+    assert_eq!(first.ctx.options(|o| o.theme_preference), egui::ThemePreference::Light);
+    let _ = std::fs::remove_dir_all(dir);
+}
