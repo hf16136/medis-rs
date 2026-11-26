@@ -73,6 +73,15 @@ const FAVORITES: &str = "favorites.json";
 const PATTERNS: &str = "patterns.json";
 const SIZES: &str = "sizes.json";
 const HISTORY: &str = "terminal-history.json";
+const SETTINGS: &str = "settings.json";
+
+/// App-wide settings shared by every window.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Settings {
+    /// `"system"`, `"light"` or `"dark"`; `None` = never chosen (follow the system).
+    pub theme: Option<String>,
+}
 
 /// Most terminal commands kept per connection by [`Storage::save_history`].
 pub const HISTORY_LIMIT: usize = 60;
@@ -266,6 +275,18 @@ impl Storage {
     pub fn save_sizes(&self, sizes: &Sizes) -> std::io::Result<()> {
         self.save(SIZES, sizes)
     }
+
+    // ---- settings --------------------------------------------------------------------------
+
+    /// Loads the app settings (defaults when missing or corrupt).
+    pub fn load_settings(&self) -> Settings {
+        self.load(SETTINGS)
+    }
+
+    /// Saves the app settings.
+    pub fn save_settings(&self, settings: &Settings) -> std::io::Result<()> {
+        self.save(SETTINGS, settings)
+    }
 }
 
 /// Writes `data` to `path` atomically: temp file next to it, fsync, rename.
@@ -378,6 +399,14 @@ mod tests {
         assert_eq!(got.first().map(String::as_str), Some("GET k15"));
         assert_eq!(got.last(), many.last());
         assert_eq!(s.load_history("|other|6379"), ["INFO"]);
+    }
+
+    #[test]
+    fn settings_round_trip() {
+        let (_d, s) = store();
+        assert_eq!(s.load_settings(), Settings::default());
+        s.save_settings(&Settings { theme: Some("dark".into()) }).unwrap();
+        assert_eq!(s.load_settings().theme.as_deref(), Some("dark"));
     }
 
     #[test]

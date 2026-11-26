@@ -239,6 +239,29 @@ pub fn toggle(ctx: &egui::Context) {
     set_preference(ctx, next);
 }
 
+/// The stored name of a theme preference (see `medis_core::storage::Settings::theme`).
+pub fn pref_name(pref: egui::ThemePreference) -> &'static str {
+    match pref {
+        egui::ThemePreference::System => "system",
+        egui::ThemePreference::Light => "light",
+        egui::ThemePreference::Dark => "dark",
+    }
+}
+
+/// Parses a stored theme name; anything unknown means "follow the system".
+pub fn pref_from_name(name: Option<&str>) -> egui::ThemePreference {
+    match name {
+        Some("light") => egui::ThemePreference::Light,
+        Some("dark") => egui::ThemePreference::Dark,
+        _ => egui::ThemePreference::System,
+    }
+}
+
+/// The preference egui currently uses.
+pub fn preference(ctx: &egui::Context) -> egui::ThemePreference {
+    ctx.options(|o| o.theme_preference)
+}
+
 /// Switch between following the system, light and dark.
 pub fn set_preference(ctx: &egui::Context, pref: egui::ThemePreference) {
     ctx.set_theme(pref);

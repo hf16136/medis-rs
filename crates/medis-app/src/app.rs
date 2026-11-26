@@ -56,6 +56,9 @@ pub struct MedisApp {
     inject: Vec<egui::Event>,
     last_title: String,
     last_fav_poll: f64,
+    /// The theme preference as last saved to / loaded from storage, to notice changes made in
+    /// this window (save them) or in another one (apply them).
+    theme_pref: egui::ThemePreference,
     #[cfg(target_os = "macos")]
     _menu: Option<muda::Menu>,
 }
@@ -74,6 +77,9 @@ impl MedisApp {
     /// Builds the app on an explicit storage, without the native menu (also used by the tests).
     pub fn with_storage(ctx: &egui::Context, rt: tokio::runtime::Runtime, storage: Storage) -> Self {
         theme::install(ctx);
+        // The theme is chosen once for every window (each one is its own process).
+        let theme_pref = theme::pref_from_name(storage.load_settings().theme.as_deref());
+        theme::set_preference(ctx, theme_pref);
         let (cmd_tx, cmd_rx) = channel();
         let favs = Favorites::load(&storage);
         let rt_handle = rt.handle().clone();
@@ -93,6 +99,7 @@ impl MedisApp {
             inject: Vec::new(),
             last_title: String::new(),
             last_fav_poll: 0.0,
+            theme_pref,
             #[cfg(target_os = "macos")]
             _menu: None,
         }
@@ -186,10 +193,24 @@ impl MedisApp {
     }
 
     fn poll_storage(&mut self, ctx: &egui::Context) {
+        // Changed here (toggle button or menu): save it so new windows and restarts use it.
+        let current = theme::preference(ctx);
+        if current != self.theme_pref {
+            self.theme_pref = current;
+            let mut settings = self.storage.load_settings();
+            settings.theme = Some(theme::pref_name(current).to_owned());
+            let _ = self.storage.save_settings(&settings);
+        }
         let now = ctx.input(|i| i.time);
         if now - self.last_fav_poll > 1.0 {
             self.last_fav_poll = now;
             self.favs.poll(&self.storage);
+            // Changed in another window: follow it.
+            let stored = theme::pref_from_name(self.storage.load_settings().theme.as_deref());
+            if stored != self.theme_pref {
+                self.theme_pref = stored;
+                theme::set_preference(ctx, stored);
+            }
         }
         // Wake up once a second even when idle, to notice changes from other windows.
         ctx.request_repaint_after(std::time::Duration::from_secs(1));

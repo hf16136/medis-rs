@@ -2878,7 +2878,7 @@ checksum = "7ebb8d8732c6a6df3d8f032a82911cfc747e00efb95cc46e8d0acd5b5b88570c"
 
 [[package]]
 name = "medis-app"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "dirs",
  "eframe",
@@ -2895,7 +2895,7 @@ dependencies = [
 
 [[package]]
 name = "medis-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "chrono",
  "dirs",
