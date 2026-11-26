@@ -13,7 +13,13 @@ Requires only the Rust toolchain and built-in macOS tools (`plutil`, `codesign`,
 Outputs (under `medis-rs/dist/`):
 
 - `Medis.app`
-- `Medis-<version>-macos-arm64.dmg`
+- `Medis-<version>-macos-<arch>.dmg` (`arm64` or `x86_64`)
+
+Build for the other architecture with `TARGET` (install it first with `rustup target add`):
+
+```sh
+TARGET=x86_64-apple-darwin ./scripts/package-macos.sh   # Intel build on an Apple Silicon Mac
+```
 
 The version comes from `cargo metadata` (workspace version). The script is
 safe to rerun; it replaces `dist/Medis.app` each time.
@@ -22,7 +28,8 @@ safe to rerun; it replaces `dist/Medis.app` each time.
 
 | Variable          | Purpose |
 |-------------------|---------|
-| `CARGO_TARGET_DIR`| Custom cargo target dir; the binary is read from `$CARGO_TARGET_DIR/release/medis`. |
+| `TARGET`          | Rust target triple: `aarch64-apple-darwin` or `x86_64-apple-darwin`. Unset = the host's architecture. |
+| `CARGO_TARGET_DIR`| Custom cargo target dir; the binary is read from `$CARGO_TARGET_DIR/[$TARGET/]release/medis`. |
 | `SIGN_IDENTITY`   | Codesign identity (e.g. `Developer ID Application: Name (TEAMID)`). Enables hardened runtime + timestamp. Unset = ad-hoc signing (`-s -`). |
 | `NOTARY_PROFILE`  | `notarytool` keychain profile (`xcrun notarytool store-credentials`). Requires `SIGN_IDENTITY`. Submits the app, waits, and staples. Unset = skipped. |
 | `BUNDLE_ID`       | Bundle identifier, default `com.medis.app`. |
@@ -40,3 +47,12 @@ downloaded. Either:
   ```
 
 Locally built apps are not quarantined and open normally.
+
+## Linux and Windows
+
+GitHub Actions (`.github/workflows/build.yml`) builds every platform on each push to `main` and
+on pull requests. Pushing a `v*` tag also publishes a GitHub release with all of them:
+
+```sh
+git tag v0.1.0 && git push origin v0.1.0
+```

@@ -538,7 +538,11 @@ fn show_connected(ui: &mut Ui, inst: &mut Instance, cx: &mut Cx) {
 fn main_tab_bar(ui: &mut Ui, inst: &mut Instance, pal: &Palette) {
     let bar = ui.max_rect();
     ui.painter().line_segment([bar.left_bottom(), bar.right_bottom()], Stroke::new(1.0, pal.border));
-    ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+    ui.horizontal_centered(|ui| {
+        ui.add_space(8.0);
+        widgets::theme_toggle(ui, pal);
+    });
+    ui.scope_builder(egui::UiBuilder::new().max_rect(bar).layout(Layout::right_to_left(Align::Center)), |ui| {
         ui.spacing_mut().item_spacing.x = 0.0;
         // Right-to-left, so list them backwards.
         let tabs = [(MainTab::Config, "Config", TabIcon::Cog), (MainTab::Terminal, "Terminal", TabIcon::Window), (MainTab::Content, "Content", TabIcon::Book)];

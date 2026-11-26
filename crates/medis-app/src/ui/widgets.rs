@@ -149,3 +149,47 @@ pub fn paint_info(p: &egui::Painter, center: Pos2, size: f32, accent: Color32) {
     p.circle_filled(center, size / 2.0, accent);
     p.text(center, Align2::CENTER_CENTER, "i", FontId::proportional(size * 0.62), Color32::WHITE);
 }
+
+/// The light/dark switch: a sun while dark (click for light), a moon while light (click for dark).
+pub fn theme_toggle(ui: &mut Ui, pal: &Palette) -> Response {
+    let dark = pal.dark;
+    let label = if dark { "Switch to light theme" } else { "Switch to dark theme" };
+    let resp = icon_button(ui, pal, |p, r, col| if dark { paint_sun(p, r, col) } else { paint_moon(p, r, col) });
+    resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, label));
+    let resp = resp.on_hover_text(label);
+    if resp.clicked() {
+        super::theme::toggle(ui.ctx());
+    }
+    resp
+}
+
+/// A sun: a disc with eight rays.
+pub fn paint_sun(p: &egui::Painter, rect: Rect, col: Color32) {
+    let c = rect.center();
+    p.circle_stroke(c, 3.2, Stroke::new(1.4, col));
+    for i in 0..8 {
+        let a = i as f32 * std::f32::consts::FRAC_PI_4;
+        let d = Vec2::angled(a);
+        p.line_segment([c + d * 5.4, c + d * 7.2], Stroke::new(1.3, col));
+    }
+}
+
+/// A crescent moon outline: the part of one circle that a second, offset circle does not cover.
+pub fn paint_moon(p: &egui::Painter, rect: Rect, col: Color32) {
+    let c = rect.center() + Vec2::new(-0.5, 0.5);
+    let (outer_r, inner_c, inner_r) = (6.0, c + Vec2::new(3.2, -2.8), 5.2);
+    let stroke = Stroke::new(1.4, col);
+    // Each arc is one contiguous run of a sampled circle; start the walk where the run is broken
+    // so it never wraps around.
+    let arc = |centre: Pos2, r: f32, keep: &dyn Fn(Pos2) -> bool| {
+        const N: usize = 96;
+        let pts: Vec<Pos2> = (0..N).map(|i| centre + Vec2::angled(i as f32 / N as f32 * std::f32::consts::TAU) * r).collect();
+        let start = (0..N).find(|&i| !keep(pts[i])).unwrap_or(0);
+        let run: Vec<Pos2> = (1..=N).map(|k| pts[(start + k) % N]).filter(|&q| keep(q)).collect();
+        if run.len() > 1 {
+            p.add(egui::Shape::line(run, stroke));
+        }
+    };
+    arc(c, outer_r, &|q| q.distance(inner_c) > inner_r);
+    arc(inner_c, inner_r, &|q| q.distance(c) < outer_r);
+}

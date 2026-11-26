@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Medis
+Comment=Redis GUI
+Exec=medis
+Icon=medis
+StartupWMClass=medis
+Categories=Development;Database;
+Terminal=false
