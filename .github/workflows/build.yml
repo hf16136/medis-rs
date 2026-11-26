@@ -29,11 +29,16 @@ jobs:
             # Oldest supported runner, so the binary runs on older glibc distros too.
             os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
-            bin: medis
           - name: windows-x86_64
             os: windows-latest
             target: x86_64-pc-windows-msvc
-            bin: medis.exe
+          - name: macos-arm64
+            os: macos-latest
+            target: aarch64-apple-darwin
+          - name: macos-x86_64
+            # Cross-compiled on the Apple Silicon runner.
+            os: macos-latest
+            target: x86_64-apple-darwin
 
     steps:
       - uses: actions/checkout@v4
@@ -61,6 +66,7 @@ jobs:
         uses: ilammy/setup-nasm@v1
 
       - name: Build app
+        if: runner.os != 'macOS'
         run: cargo build --release --locked -p medis-app --target ${{ matrix.target }}
 
       - name: Read version
@@ -94,6 +100,14 @@ jobs:
           Compress-Archive -Path "dist/$name" -DestinationPath "dist/$name.zip"
           "ASSET=dist/$name.zip" | Out-File -FilePath $env:GITHUB_ENV -Append
 
+      - name: Build and package (macOS)
+        if: runner.os == 'macOS'
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          ./scripts/package-macos.sh
+          echo "ASSET=$(ls dist/*.dmg)" >> "$GITHUB_ENV"
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -116,4 +130,13 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           files: dist/*
-          draft: true
+          generate_release_notes: true
+          body: |
+            Downloads:
+            - **Windows** (64-bit): `...-windows-x86_64.zip`, unzip and run `medis.exe`
+            - **macOS Apple Silicon** (M1 and later): `...-macos-arm64.dmg`
+            - **macOS Intel**: `...-macos-x86_64.dmg`
+            - **Linux** (x86_64): `...-linux-x86_64.tar.gz`, extract and run `./medis`
+
+            The macOS builds are not notarized: the first time, right-click Medis.app and choose **Open**,
+            or run `xattr -dr com.apple.quarantine /Applications/Medis.app`.
