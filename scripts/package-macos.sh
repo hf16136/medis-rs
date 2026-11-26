@@ -9,7 +9,15 @@ APP="$DIST/Medis.app"
 PLIST_TEMPLATE="$ROOT/packaging/macos/Info.plist.in"
 ICON="$ROOT/crates/medis-app/assets/Medis.icns"
 BUNDLE_ID="${BUNDLE_ID:-com.medis.app}"
-ARCH="arm64"
+# TARGET: a Rust target triple to build for (e.g. x86_64-apple-darwin for Intel Macs).
+# Unset = the host's architecture.
+TARGET="${TARGET:-}"
+case "$TARGET" in
+  x86_64-apple-darwin) ARCH="x86_64" ;;
+  aarch64-apple-darwin) ARCH="arm64" ;;
+  "") ARCH="$(uname -m)" ;;
+  *) echo "Unsupported TARGET: $TARGET" >&2; exit 2 ;;
+esac
 
 SKIP_BUILD=0
 NO_DMG=0
@@ -19,7 +27,7 @@ for arg in "$@"; do
     --no-dmg) NO_DMG=1 ;;
     -h|--help)
       echo "Usage: $0 [--skip-build] [--no-dmg]"
-      echo "Env: SIGN_IDENTITY, NOTARY_PROFILE, BUNDLE_ID, CARGO_TARGET_DIR"
+      echo "Env: TARGET, SIGN_IDENTITY, NOTARY_PROFILE, BUNDLE_ID, CARGO_TARGET_DIR"
       exit 0 ;;
     *) echo "Unknown argument: $arg" >&2; exit 2 ;;
   esac
@@ -38,11 +46,17 @@ echo "==> Medis version $VERSION"
 # Resolve target dir
 TARGET_DIR="${CARGO_TARGET_DIR:-$ROOT/target}"
 case "$TARGET_DIR" in /*) ;; *) TARGET_DIR="$ROOT/$TARGET_DIR" ;; esac
-BIN="$TARGET_DIR/release/medis"
+if [[ -n "$TARGET" ]]; then
+  BIN="$TARGET_DIR/$TARGET/release/medis"
+  TARGET_ARGS=(--target "$TARGET")
+else
+  BIN="$TARGET_DIR/release/medis"
+  TARGET_ARGS=()
+fi
 
 if [[ $SKIP_BUILD -eq 0 ]]; then
-  echo "==> cargo build --release -p medis-app"
-  cargo build --release -p medis-app
+  echo "==> cargo build --release -p medis-app ${TARGET_ARGS[*]:-}"
+  cargo build --release -p medis-app ${TARGET_ARGS[@]+"${TARGET_ARGS[@]}"}
 else
   echo "==> Skipping build"
 fi

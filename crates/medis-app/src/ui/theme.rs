@@ -229,6 +229,16 @@ fn install_fonts(ctx: &egui::Context) {
     let _ = ctx;
 }
 
+/// Flip between light and dark, starting from whatever is showing now (so "Match System" turns
+/// into the opposite of the system theme).
+pub fn toggle(ctx: &egui::Context) {
+    let next = match ctx.theme() {
+        Theme::Dark => egui::ThemePreference::Light,
+        Theme::Light => egui::ThemePreference::Dark,
+    };
+    set_preference(ctx, next);
+}
+
 /// Switch between following the system, light and dark.
 pub fn set_preference(ctx: &egui::Context, pref: egui::ThemePreference) {
     ctx.set_theme(pref);
